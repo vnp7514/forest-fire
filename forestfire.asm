@@ -55,7 +55,7 @@ dash:
 newline:
         .asciiz "\n"
 str_in:
-        .asciiz "012345678901234567890123456789"
+        .asciiz "012345678901234567890123456789\n"
 
 #
 #----------------------------------
@@ -100,25 +100,27 @@ main:
         syscall                     # read the Grid Size
         move    $s7, $v0            # s7 = grid size
         slti    $t0, $s7, 31        # t0 = 1 if size < 31
-        la      $s0, grid_size_err
+        la      $s0, grid_size_err  # s0 is reserved for error outputs
         beq     $t0, $zero, err_main_done
         slti    $t1, $s7, 4         # t1 = 1 if size < 4. t1 = 0 if size >= 4
         bne     $t1, $zero, err_main_done
+
 
         li      $v0, READ_INT
         syscall                     # read the number of Generations
         move    $s6, $v0            # s6 = generation
         slti    $t0, $s6, 21        # t0 = 1 if gen <= 20
-        la      $s0, gen_err        
+        la      $s0, gen_err        # s0 is reserved for errors
         beq     $t0, $zero, err_main_done
         slti    $t0, $s6, 0         # t0 = 1 if gen < 0. t0 = 0 if gen >=0
         bne     $t0, $zero, err_main_done
+
 
         li      $v0, READ_STRING    # read the Wind Direction as a string
         la      $a0, str_in         # place to store the char read in
         addi    $a1, $zero, 3       # the number of char to read in
         syscall
-        la      $s0, wind_err
+        la      $s0, wind_err       # s0 is reserved for error
         lbu     $s2, 0($a0)         # s2 = the char that was read
         la      $s1, north
         lbu     $s1, 0($s1)
@@ -140,7 +142,55 @@ main:
 afterwind:
         move    $s5, $s2            # s5 = wind direction
 
-        # TODO Initial Grid checking
+
+#
+# Beginning of grid checking
+# 
+        move    $t7, $zero          # t7 is for row idx
+        move    $t8, $zero          # t8 is for col idx
+        la      $s0, char_err       # s0 is reserved for error
+grid_checking:
+        li      $v0, READ_STRING
+        la      $a0, str_in
+        addi    $a1, $s7, 2         # maximum chars to read = dimension+2
+        syscall
+        move    $t2, $a0            # t2 now holds the addr of the str_in
+        la      $t0, newline
+        lbu     $t0, 0($t0)         # t0 = '\n'
+        lbu     $t1, 0($a0)         # t1 = first char in str_in
+        beq     $t1, $t0, g_c_done  # if first char == '\n' then done
+
+grid_loop:
+                                    # t1 is the next char in the line
+
+        beq     $t8, $s7, g_l_done  # if col idx == dimension, then
+                                    # we have read enough characters from the
+                                    # line
+        la      $t0, burn
+        lbu     $t0, 0($t0)         # t0 = 'B'
+        beq     $t0, $t1, g_l_next
+        la      $t0, grass
+        lbu     $t0, 0($t0)         # t0 = '.'
+        beq     $t0, $t1, g_l_next
+        la      $t0, tree
+        lbu     $t0, 0($t0)         # t0 = 't'
+        beq     $t0, $t1, g_l_next
+        j       err_main_done       # the char is not any of the above
+ 
+g_l_next:
+        addi    $t8, $t8, 1         # col idx ++
+        addi    $t2, $t2, 1         # t2 = addr of next char
+        lbu     $t1, 0($t2)         # t1 = next char
+        j       grid_loop
+g_l_done:
+        move    $t8, $zero          # reset row idx
+        addi    $t7, $t7, 1         # row idx++
+                                  
+        beq     $t7, $s7, g_c_done  # if row idx == dimension, we have read
+                                    # enough lines
+        j       grid_checking       
+
+g_c_done:
 
         jal     print_banner
 
