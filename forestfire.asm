@@ -141,6 +141,9 @@ afterwind:
         move    $s5, $s2            # s5 = wind direction
 
         # TODO Initial Grid checking
+
+        jal     print_banner
+
         j       main_done
 
 err_main_done:                      # Print out the error
@@ -169,5 +172,51 @@ main_done:
 # End of main routine
 #
 
+#
+# Name:         print_banner
+# Description:  Print out the program banner
+# Arguments:    None
+# Returns:      None
+# Destroys:     a0, v0
+#
+print_banner:
+
+#
+# Save registers ra on the stack
+# 
+        addi    $sp, $sp, -4
+        sw      $ra, 0($sp)
+
+#
+# Beginning of print banner routine
+#
+        li      $v0, PRINT_STRING   # Printing the program banner
+        la      $a0, dash           # Printing +-------------+
+        syscall
+        li      $v0, PRINT_STRING 
+        la      $a0, newline        # Printing newline
+        syscall
+        li      $v0, PRINT_STRING 
+        la      $a0, banner         # Printing | FOREST FIRE |
+        syscall
+        li      $v0, PRINT_STRING 
+        la      $a0, newline        # Printing newline
+        syscall
+        li      $v0, PRINT_STRING 
+        la      $a0, dash           # Printing +-------------+
+        syscall
+        li      $v0, PRINT_STRING 
+        la      $a0, newline        # Printing newline 
+        syscall 
 
 
+#
+# Restore registers ra from the stack
+#
+        lw      $ra, 0($sp)
+        addi    $sp, $sp, 4
+        jr      $ra
+
+#
+# End of print banner routine
+#
