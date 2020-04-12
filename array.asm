@@ -29,47 +29,30 @@ PRINT_INT =     1
 PRINT_STRING =  4
 READ_INT =      5
 READ_STRING =   8
-ROW_LENGTH =    31                  # the length of 1 row in the array
+ROW_LENGTH =    30                  # the length of 1 row in the array
 
         .data
         .align  0
 array:
-        .asciiz "                              "
-        .asciiz "                              "
-        .asciiz "                              "
-        .asciiz "                              "
-        .asciiz "                              "
-        .asciiz "                              "
-        .asciiz "                              "
-        .asciiz "                              "
-        .asciiz "                              "
-        .asciiz "                              "
-        .asciiz "                              "
-        .asciiz "                              "
-        .asciiz "                              "
-        .asciiz "                              "
-        .asciiz "                              "
-        .asciiz "                              "
-        .asciiz "                              "
-        .asciiz "                              "
-        .asciiz "                              "
-        .asciiz "                              "
-        .asciiz "                              "
-        .asciiz "                              "
-        .asciiz "                              "
-        .asciiz "                              "
-        .asciiz "                              "
-        .asciiz "                              "
-        .asciiz "                              "
-        .asciiz "                              "
-        .asciiz "                              "
-        .asciiz "                              "
+        .space  900
 
 horizontal_border:
         .asciiz "+                               "
 
+plus: 
+        .ascii "+"
+
+v_bar:
+        .ascii "|"
+
+da:
+        .ascii "-"
+
 box:
         .asciiz "+                               "
+
+newline:
+        .asciiz  "\n"
 
         .align  2
 dimension:
@@ -79,9 +62,11 @@ dimension:
 #------------------------------
 #
 
+#
 # CODE AREAS
+#
         .text                   # this is program code
-        .align 2                # instructions must be on word boundaries
+        .align  2               # instructions must be on word boundaries
 
         .globl  create_arr      # the extern. def. of array creating routine
         .globl  insert_arr      # the extern. def. of array inserting routine
@@ -152,14 +137,18 @@ view_arr:
 #
 
         la      $t0, array
-        mul     $t1, $a0, ROW_LENGTH
-        add     $t0, $t0, $t1
-        add     $t0, $t0, $a1
-        lw      $a0, 0($t0)             # a0 = array[row][col]
+        la      $t1, dimension
+        lw      $t1, 0($t1)             # t1 = dimension
+        mult    $t1, $a0
+        mflo    $t1                     # t1 = dimension * row
+                                        # Using only low because max t1 = 870 
+        add     $t0, $t0, $t1           # t0 = &array[row]
+        add     $t0, $t0, $a1           # t0 = &array[row][col]
+        lb      $a0, 0($t0)             # a0 = array[row][col]
         li      $v0, PRINT_INT
         syscall
         
-        lw      $v0, 0($t0)             # return v0 as array[row][col]
+        lb      $v0, 0($t0)             # return v0 as array[row][col]
 
 #
 # Restore register ra

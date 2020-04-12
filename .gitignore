@@ -1,4 +1,6 @@
 *.swp
 *.obj
 *.out
+*.lst
+*.map
 Makefile
