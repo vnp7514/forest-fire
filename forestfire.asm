@@ -1,6 +1,7 @@
 #
 # FILE:         $Files
 # AUTHOR:       Van Pham vnp7514@rit.edu
+# Section:      3 MWF 11am
 #
 # DESCRIPTION: 
 #       This runs the Forest Fire program aka cellular automaton.
@@ -15,7 +16,8 @@
 #       Initial Grid (B, t, .)
 #
 # OUTPUT:
-#       None
+#       For each generation, print out the grid that is modified by the 
+#         previous state of the grid
 #
 # CONSTANTS
 #
@@ -191,7 +193,6 @@ grid_loop:
         j       err_main_done       # the char is not any of the above
  
 g_l_next:
-        #TODO Insert the element in the list
         move    $a0, $s1
         move    $a1, $s2
         move    $a3, $t1
@@ -221,15 +222,13 @@ forest_beg:
         jal     print_gen           # modifies the current gen number
         beq     $s1, $s6, forest_ed # if current gen = max gen then done
 
-        # TODO MODIFYING THE FOREST OF FIRE/ Saved in arr2
-
 frt_lp:                             # forest loop
         bne     $s4, $s7, frt_nxt   # if col idx != dimension then go next
         move    $s4, $zero          # Otherwise, reset col idx and 
         addi    $s3, $s3, 1         # add 1 to row idx
         beq     $s3, $s7, frt_l_ed  # if row idx == dimension then finish
+
 frt_nxt:                            # forest next
-        # TODO ADD checking conditions here
         move    $a0, $s3
         move    $a1, $s4
         jal     check_burn

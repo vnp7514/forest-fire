@@ -1,6 +1,7 @@
 #
 # FILE:         $File$
 # AUTHOR:       Van Pham vnp7514@rit.edu
+# Section:      3 MWF 11am
 #
 # DESCRIPTION:
 #       This includes the functions to create and modify an array:
