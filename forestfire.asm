@@ -56,6 +56,14 @@ newline:
         .asciiz "\n"
 str_in:
         .asciiz "012345678901234567890123456789\n"
+gen_beg:
+        .asciiz "==== #"
+gen_end:
+        .asciiz " ====\n"
+
+        .align  2
+gen:
+        .word   0
 
 #
 #----------------------------------
@@ -95,7 +103,6 @@ main:
 #
 # Start of main routine
 #
-
         li      $v0, READ_INT
         syscall                     # read the Grid Size
         move    $s7, $v0            # s7 = grid size
@@ -202,7 +209,13 @@ g_c_done:
 
         jal     print_banner
 
-        jal     print_arr
+forest_beg:
+        la      $s1, gen
+        lw      $s1, 0($s1)         # s1 = current gen number
+        jal     print_gen
+        beq     $s1, $s6, forest_ed # if current gen = max gen then done
+        j       forest_beg
+forest_ed:
 
         j       main_done
 
@@ -268,6 +281,9 @@ print_banner:
         li      $v0, PRINT_STRING 
         la      $a0, newline        # Printing newline 
         syscall 
+        li      $v0, PRINT_STRING 
+        la      $a0, newline        # Printing newline 
+        syscall 
 
 
 #
@@ -280,3 +296,70 @@ print_banner:
 #
 # End of print banner routine
 #
+
+
+# Name:         print_gen
+# Description:  Print out a generation of the forest
+#
+#
+# Arguments:    None
+# 
+# Returns:      none
+# Destroys:     t0, t1, t2
+#
+print_gen:
+#
+# Save registers ra and s0-s7 on the stack
+#
+        addi    $sp, $sp, -36
+        sw      $ra, 0($sp)
+        sw      $s7, 32($sp)
+        sw      $s6, 28($sp)
+        sw      $s5, 24($sp)
+        sw      $s4, 20($sp)
+        sw      $s3, 16($sp)
+        sw      $s2, 12($sp)
+        sw      $s1, 8($sp)
+        sw      $s0, 4($sp)
+
+#
+# Start of print_gen routine
+#
+        la      $t2, gen
+        lw      $t0, 0($t2)         # t0 = current gen
+        addi    $t1, $t0, 1         # current gen ++
+        sw      $t1, 0($t2)
+        la      $a0, gen_beg
+        li      $v0, PRINT_STRING   # print the beginning of the gen header
+        syscall
+        move    $a0, $t0
+        li      $v0, PRINT_INT      # print the generation number
+        syscall
+        la      $a0, gen_end        
+        li      $v0, PRINT_STRING   # print the end of the gen header
+        syscall
+        jal     print_arr
+        la      $a0, newline
+        li      $v0, PRINT_STRING   # print a new line
+        syscall
+        
+
+#
+# Restore registers ra and s0-s7 on the stack
+#
+        lw      $ra, 0($sp)
+        lw      $s7, 32($sp)
+        lw      $s6, 28($sp)
+        lw      $s5, 24($sp)
+        lw      $s4, 20($sp)
+        lw      $s3, 16($sp)
+        lw      $s2, 12($sp)
+        lw      $s1, 8($sp)
+        lw      $s0, 4($sp)
+        addi    $sp, $sp, 36
+        jr      $ra
+
+#
+# End of print_gen routine
+#
+
