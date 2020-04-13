@@ -77,8 +77,12 @@ gen:
     
         .globl  create_arr      # external reference
         .globl  insert_arr      # external reference
+        .globl  insert_arr2
         .globl  view_arr        # external reference
         .globl  print_arr       # external reference
+        .globl  print_arr2
+        .globl  copy2to1
+        .globl  copy1to2
         .globl  main            # external definition of main routine
 
 #
@@ -339,6 +343,8 @@ print_gen:
         li      $v0, PRINT_STRING   # print the end of the gen header
         syscall
         jal     print_arr
+        jal     print_arr2
+        jal     copy1to2
         la      $a0, newline
         li      $v0, PRINT_STRING   # print a new line
         syscall
