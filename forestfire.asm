@@ -253,6 +253,7 @@ forest_ed:
         j       main_done
 
 err_main_done:                      # Print out the error
+        jal     print_banner
         li      $v0, PRINT_STRING
         move    $a0, $s0
         syscall

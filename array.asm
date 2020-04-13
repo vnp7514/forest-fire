@@ -56,7 +56,7 @@ da:
         .ascii "-"
 
 box:
-        .asciiz "+                               "
+        .asciiz "01234567890123456789012345678901"
 
 newlin:
         .asciiz  "\n"
@@ -632,6 +632,7 @@ m_b_done:
         la      $t1, plus          
         lbu     $t1, 0($t1)         # t1 = '+'
         sb      $t1, 0($t0)         # box[dimension+1] = '+'
+        sb      $zero, 1($t0)       # box[dimension+2] = '\0'
         la      $a0, box
         li      $v0, PRINT_STRING
         syscall
