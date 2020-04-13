@@ -233,6 +233,16 @@ frt_nxt:                            # forest next
         move    $a0, $s3
         move    $a1, $s4
         jal     check_burn
+        move    $a0, $s3
+        move    $a1, $s4
+        move    $a2, $s7
+        jal     check_tree_burn
+        move    $a0, $s3
+        move    $a1, $s4
+        move    $a2, $s5
+        move    $a3, $s7
+        jal     check_wind
+
         addi    $s4, $s4, 1
         j       frt_lp
 
@@ -451,3 +461,248 @@ c_b_done:
 #
 # End of check_burn routine
 #
+
+# Name:         check_tree_burn
+# Description:  A tree in the previous generation will burn (turn into 
+#                 a burning cell) if at least one of its cardinal direction 
+#                 (north, south, east, or west) neighbors in the previous 
+#                 generation is burning. Otherwise it will stay a tree in 
+#                 the current generation.
+#
+#
+# Arguments:    a0  the row idx of the cell
+#               a1  the col idx of the cell 
+#               a2  the dimension of the array
+# 
+# Returns:      none
+# Destroys:     t0, t1, t2
+#
+check_tree_burn:
+#
+# Save registers ra and s0-s7 on the stack
+#
+        addi    $sp, $sp, -36
+        sw      $ra, 0($sp)
+        sw      $s7, 32($sp)
+        sw      $s6, 28($sp)
+        sw      $s5, 24($sp)
+        sw      $s4, 20($sp)
+        sw      $s3, 16($sp)
+        sw      $s2, 12($sp)
+        sw      $s1, 8($sp)
+        sw      $s0, 4($sp)
+
+#
+# Start of check_tree_burn routine
+#
+        move    $s0, $a0            # s0 = row idx of the cell
+        move    $s1, $a1            # s1 = col idx of the cell
+        addi    $s2, $a2, -1        # s2 = dimension-1
+ 
+        la      $s6, tree
+        lbu     $s6, 0($s6)         # s6 = 't'
+        move    $a0, $s0
+        move    $a1, $s1
+        jal     view_arr
+        move    $t0, $v0            # t0 = arr[row][col]
+        bne     $t0, $s6, ctb_done  # if arr[row][col] != 't' then no check
+        
+        la      $s7, burn
+        lbu     $s7, 0($s7)         # s7 = 'B' 
+
+        beq     $s0, $zero, sth_ctb
+        addi    $a0, $s0, -1        # North cell has original row - 1
+        move    $a1, $s1            # it has same col idx
+        jal     view_arr            
+        move    $s3, $v0            # s3 = arr[row-1][col]
+        bne     $s7, $s3, sth_ctb   # if North is not burning, check other
+        move    $a0, $s0
+        move    $a1, $s1
+        move    $a3, $s7
+        jal     insert_arr2
+        j       ctb_done
+
+sth_ctb:                            # south check tree burn
+        beq     $s0, $s2, wst_ctb
+        addi    $a0, $s0, 1         # South cell has original row + 1
+        move    $a1, $s1            # it has same col idx
+        jal     view_arr            
+        move    $s3, $v0            # s3 = arr[row+1][col]
+        bne     $s7, $s3, wst_ctb   # if South is not burning, check other
+        move    $a0, $s0
+        move    $a1, $s1
+        move    $a3, $s7
+        jal     insert_arr2
+        j       ctb_done
+
+wst_ctb:                            # west check tree burn
+        beq     $s1, $zero, est_ctb
+        addi    $a1, $s1, -1        # West cell has original col - 1
+        move    $a0, $s0            # it has same row idx
+        jal     view_arr            
+        move    $s3, $v0            # s3 = arr[row][col-1]
+        bne     $s7, $s3, est_ctb   # if West is not burning, check other
+        move    $a0, $s0
+        move    $a1, $s1
+        move    $a3, $s7
+        jal     insert_arr2
+        j       ctb_done
+
+
+est_ctb:                            # east check tree burn
+        beq     $s1, $s2, ctb_done
+        addi    $a1, $s1, 1         # East cell has original col + 1
+        move    $a0, $s0            # it has same row idx
+        jal     view_arr            
+        move    $s3, $v0            # s3 = arr[row][col+1]
+        bne     $s7, $s3, ctb_done  # if East is not burning, done
+        move    $a0, $s0
+        move    $a1, $s1
+        move    $a3, $s7
+        jal     insert_arr2
+
+ctb_done:
+#
+# Restore registers ra and s0-s7 on the stack
+#
+        lw      $ra, 0($sp)
+        lw      $s7, 32($sp)
+        lw      $s6, 28($sp)
+        lw      $s5, 24($sp)
+        lw      $s4, 20($sp)
+        lw      $s3, 16($sp)
+        lw      $s2, 12($sp)
+        lw      $s1, 8($sp)
+        lw      $s0, 4($sp)
+        addi    $sp, $sp, 36
+        jr      $ra
+
+#
+# End of check_tree_burn routine
+#
+
+# Name:         check_wind
+# Description:  A previous generation tree will turn an adjacent 
+#                 empty (grass) cell into a current generation tree if 
+#                 that empty cell is in the given wind direction.
+#
+#
+# Arguments:    a0  the row idx of the cell
+#               a1  the col idx of the cell 
+#               a2  the wind direction
+#               a3  the dimension
+# 
+# Returns:      none
+# Destroys:     t0, t1, t2
+#
+check_wind:
+#
+# Save registers ra and s0-s7 on the stack
+#
+        addi    $sp, $sp, -36
+        sw      $ra, 0($sp)
+        sw      $s7, 32($sp)
+        sw      $s6, 28($sp)
+        sw      $s5, 24($sp)
+        sw      $s4, 20($sp)
+        sw      $s3, 16($sp)
+        sw      $s2, 12($sp)
+        sw      $s1, 8($sp)
+        sw      $s0, 4($sp)
+
+#
+# Start of check_wind routine
+#
+        move    $s0, $a0            # s0 = row idx
+        move    $s1, $a1            # s1 = col idx
+        move    $s2, $a2            # s2 = the wind
+        addi    $s3, $a3, -1        # s3 = dimension -1
+
+        la      $s5, grass
+        lbu     $s5, 0($s5)         # s5 = '.'
+        la      $s6, tree
+        lbu     $s6, 0($s6)         # s6 = 't'
+        move    $a0, $s0
+        move    $a1, $s1
+        jal     view_arr
+        move    $t0, $v0            # t0 = arr[row][col]
+        bne     $t0, $s6, cw_done  # if arr[row][col] != 't' then no check
+
+        la      $t0, north
+        lbu     $t0, 0($t0)         # t0 = 'N'
+        la      $t1, south
+        lbu     $t1, 0($t1)         # t1 = 'S' 
+        la      $t2, west  
+        lbu     $t2, 0($t2)         # t2 = 'W'
+        beq     $s2, $t2, west_cw
+        beq     $s2, $t1, suth_cw
+        beq     $s2, $t0, nrth_cw
+
+        beq     $s1, $s3, cw_done   # if col = dimension -1, cannot go east
+        addi    $a1, $s1, 1         # east cell has col + 1
+        move    $a0, $s0            # has same row
+        jal     view_arr
+        bne     $v0, $s5, cw_done   # if east cell is not grass, then done
+        addi    $a1, $s1, 1         # east cell has col + 1
+        move    $a0, $s0            # has same row
+        move    $a3, $s6            # value will be 't'
+        jal     insert_arr2
+        j       cw_done
+
+west_cw:
+        beq     $s1, $zero, cw_done # if col = 0, cannot go west
+        addi    $a1, $s1, -1        # west cell has col - 1
+        move    $a0, $s0            # has same row
+        jal     view_arr
+        bne     $v0, $s5, cw_done   # if west cell is not grass, then done
+        addi    $a1, $s1, -1        # west cell has col - 1
+        move    $a0, $s0            # has same row
+        move    $a3, $s6            # value will be 't'
+        jal     insert_arr2
+        j       cw_done
+
+suth_cw:
+        beq     $s0, $s3, cw_done   # if row = dimension -1, cannot go south
+        addi    $a0, $s0, 1         # south cell has row + 1
+        move    $a1, $s1            # has same col
+        jal     view_arr
+        bne     $v0, $s5, cw_done   # if south cell is not grass, then done
+        addi    $a0, $s0, 1         # south cell has row + 1
+        move    $a1, $s1            # has same col
+        move    $a3, $s6            # value will be 't'
+        jal     insert_arr2
+        j       cw_done
+
+nrth_cw:
+        beq     $s0, $zero, cw_done # if row = 0, cannot go north
+        addi    $a0, $s0, -1        # north cell has row- 1
+        move    $a1, $s1            # has same col
+        jal     view_arr
+        bne     $v0, $s5, cw_done   # if north cell is not grass, then done
+        addi    $a0, $s0, -1        # north cell has row- 1
+        move    $a1, $s1            # has same col
+        move    $a3, $s6            # value will be 't'
+        jal     insert_arr2
+        j       cw_done
+
+cw_done:
+#
+# Restore registers ra and s0-s7 on the stack
+#
+        lw      $ra, 0($sp)
+        lw      $s7, 32($sp)
+        lw      $s6, 28($sp)
+        lw      $s5, 24($sp)
+        lw      $s4, 20($sp)
+        lw      $s3, 16($sp)
+        lw      $s2, 12($sp)
+        lw      $s1, 8($sp)
+        lw      $s0, 4($sp)
+        addi    $sp, $sp, 36
+        jr      $ra
+
+#
+# End of check_wind routine
+#
+
+
