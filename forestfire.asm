@@ -214,10 +214,30 @@ g_c_done:
         jal     print_banner
 
 forest_beg:
+        move    $s3, $zero          # s3 = row idx = 0
+        move    $s4, $zero          # s4 = col idx = 0
         la      $s1, gen
         lw      $s1, 0($s1)         # s1 = current gen number
-        jal     print_gen
+        jal     print_gen           # modifies the current gen number
         beq     $s1, $s6, forest_ed # if current gen = max gen then done
+
+        # TODO MODIFYING THE FOREST OF FIRE/ Saved in arr2
+
+frt_lp:                             # forest loop
+        bne     $s4, $s7, frt_nxt   # if col idx != dimension then go next
+        move    $s4, $zero          # Otherwise, reset col idx and 
+        addi    $s3, $s3, 1         # add 1 to row idx
+        beq     $s3, $s7, frt_l_ed  # if row idx == dimension then finish
+frt_nxt:                            # forest next
+        # TODO ADD checking conditions here
+        move    $a0, $s3
+        move    $a1, $s4
+        jal     check_burn
+        addi    $s4, $s4, 1
+        j       frt_lp
+
+frt_l_ed:                           # forest loop end
+        jal     copy2to1            # Copy the updated array to the old array
         j       forest_beg
 forest_ed:
 
@@ -343,7 +363,6 @@ print_gen:
         li      $v0, PRINT_STRING   # print the end of the gen header
         syscall
         jal     print_arr
-        jal     print_arr2
         jal     copy1to2
         la      $a0, newline
         li      $v0, PRINT_STRING   # print a new line
@@ -369,3 +388,66 @@ print_gen:
 # End of print_gen routine
 #
 
+# Name:         check_burn
+# Description:  A burning cell from the previous generation turns into
+#                 an empty grass cell in the current generation
+#
+#
+# Arguments:    a0  the row idx of the cell
+#               a1  the col idx of the cell 
+#               
+# 
+# Returns:      none
+# Destroys:     t0, t1, t2
+#
+check_burn:
+#
+# Save registers ra and s0-s7 on the stack
+#
+        addi    $sp, $sp, -36
+        sw      $ra, 0($sp)
+        sw      $s7, 32($sp)
+        sw      $s6, 28($sp)
+        sw      $s5, 24($sp)
+        sw      $s4, 20($sp)
+        sw      $s3, 16($sp)
+        sw      $s2, 12($sp)
+        sw      $s1, 8($sp)
+        sw      $s0, 4($sp)
+
+#
+# Start of check_burn routine
+#
+        move    $s0, $a0
+        move    $s1, $a1
+        jal     view_arr
+        move    $s2, $v0            # s2 = arr[row][col]
+        la      $t0, burn
+        lbu     $t0, 0($t0)         # t0 = 'B'
+        bne     $t0, $s2, c_b_done  # if s2 != 'B' then no need to change
+        move    $a0, $s0
+        move    $a1, $s1
+        la      $t0, grass          # t0 = '.'
+        lbu     $t0, 0($t0)
+        move    $a3, $t0
+        jal     insert_arr2
+c_b_done:
+
+#
+# Restore registers ra and s0-s7 on the stack
+#
+        lw      $ra, 0($sp)
+        lw      $s7, 32($sp)
+        lw      $s6, 28($sp)
+        lw      $s5, 24($sp)
+        lw      $s4, 20($sp)
+        lw      $s3, 16($sp)
+        lw      $s2, 12($sp)
+        lw      $s1, 8($sp)
+        lw      $s0, 4($sp)
+        addi    $sp, $sp, 36
+        jr      $ra
+
+#
+# End of check_burn routine
+#
