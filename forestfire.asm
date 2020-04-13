@@ -104,6 +104,8 @@ main:
         beq     $t0, $zero, err_main_done
         slti    $t1, $s7, 4         # t1 = 1 if size < 4. t1 = 0 if size >= 4
         bne     $t1, $zero, err_main_done
+        move    $a0, $s7
+        jal     create_arr          # Initialize a dimXdim array
 
 
         li      $v0, READ_INT
@@ -146,15 +148,15 @@ afterwind:
 #
 # Beginning of grid checking
 # 
-        move    $t7, $zero          # t7 is for row idx
-        move    $t8, $zero          # t8 is for col idx
+        move    $s1, $zero          # s1 is for row idx
+        move    $s2, $zero          # s2 is for col idx
         la      $s0, char_err       # s0 is reserved for error
 grid_checking:
         li      $v0, READ_STRING
         la      $a0, str_in
         addi    $a1, $s7, 2         # maximum chars to read = dimension+2
         syscall
-        move    $t2, $a0            # t2 now holds the addr of the str_in
+        move    $s3, $a0            # s3 now holds the addr of the str_in
         la      $t0, newline
         lbu     $t0, 0($t0)         # t0 = '\n'
         lbu     $t1, 0($a0)         # t1 = first char in str_in
@@ -163,7 +165,7 @@ grid_checking:
 grid_loop:
                                     # t1 is the next char in the line
 
-        beq     $t8, $s7, g_l_done  # if col idx == dimension, then
+        beq     $s2, $s7, g_l_done  # if col idx == dimension, then
                                     # we have read enough characters from the
                                     # line
         la      $t0, burn
@@ -178,21 +180,29 @@ grid_loop:
         j       err_main_done       # the char is not any of the above
  
 g_l_next:
-        addi    $t8, $t8, 1         # col idx ++
-        addi    $t2, $t2, 1         # t2 = addr of next char
-        lbu     $t1, 0($t2)         # t1 = next char
+        #TODO Insert the element in the list
+        move    $a0, $s1
+        move    $a1, $s2
+        move    $a3, $t1
+        jal     insert_arr
+
+        addi    $s2, $s2, 1         # col idx ++
+        addi    $s3, $s3, 1         # s3 = addr of next char
+        lbu     $t1, 0($s3)         # t1 = next char
         j       grid_loop
 g_l_done:
-        move    $t8, $zero          # reset row idx
-        addi    $t7, $t7, 1         # row idx++
+        move    $s2, $zero          # reset row idx
+        addi    $s1, $s1, 1         # row idx++
                                   
-        beq     $t7, $s7, g_c_done  # if row idx == dimension, we have read
+        beq     $s1, $s7, g_c_done  # if row idx == dimension, we have read
                                     # enough lines
         j       grid_checking       
 
 g_c_done:
 
         jal     print_banner
+
+        jal     print_arr
 
         j       main_done
 
